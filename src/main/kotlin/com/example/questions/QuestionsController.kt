@@ -1,14 +1,13 @@
 package com.example.questions
 
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
+@CrossOrigin(origins = ["http://localhost:3000"])
 @RequestMapping("/questions")
 class QuestionsController {
     @GetMapping("/questions")
-    fun questions(): MutableList<Question> {
+    fun questions(): ApiResult {
         var questions = mutableListOf(
                 Question("1", "Question 1"),
                 Question("2", "Question 2"),
@@ -17,6 +16,13 @@ class QuestionsController {
                 Question("5", "Question 5")
         )
 
-        return questions
+        return ApiResult(true, questions)
+    }
+
+    @PostMapping("/addQuestion")
+    fun addQuestion(@RequestBody question: Question): ApiResult {
+        print("Add question $question")
+
+        return ApiResult(true, null)
     }
 }
