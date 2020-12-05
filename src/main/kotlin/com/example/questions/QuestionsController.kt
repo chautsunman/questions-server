@@ -10,15 +10,15 @@ class QuestionsController(
 ) {
     @GetMapping("/questions")
     fun questions(): ApiResult {
-        var questions = questionsService.getQuestions()
+        val questions = questionsService.getQuestions()
 
         return ApiResult(true, questions)
     }
 
     @PostMapping("/addQuestion")
     fun addQuestion(@RequestBody question: Question): ApiResult {
-        print("Add question $question")
+        val res = questionsService.addQuestion(question)
 
-        return ApiResult(true, null)
+        return ApiResult(true, res)
     }
 }

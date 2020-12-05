@@ -6,7 +6,14 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class AppConfig {
     @Bean
-    fun questionsService(): QuestionsService {
-        return QuestionsServiceImpl()
+    fun questionsService(
+            questionDocumentFactory: QuestionDocumentFactory
+    ): QuestionsService {
+        return QuestionsServiceImpl(questionDocumentFactory)
+    }
+
+    @Bean
+    fun questionDocumentFactory(): QuestionDocumentFactory {
+        return QuestionDocumentFactory()
     }
 }
