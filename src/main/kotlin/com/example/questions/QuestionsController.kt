@@ -5,16 +5,12 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @CrossOrigin(origins = ["http://localhost:3000"])
 @RequestMapping("/questions")
-class QuestionsController {
+class QuestionsController(
+        private val questionsService: QuestionsService
+) {
     @GetMapping("/questions")
     fun questions(): ApiResult {
-        var questions = mutableListOf(
-                Question("1", "Question 1"),
-                Question("2", "Question 2"),
-                Question("3", "Question 3"),
-                Question("4", "Question 4"),
-                Question("5", "Question 5")
-        )
+        var questions = questionsService.getQuestions()
 
         return ApiResult(true, questions)
     }
