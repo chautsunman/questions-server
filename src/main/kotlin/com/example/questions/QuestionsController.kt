@@ -26,4 +26,13 @@ class QuestionsController(
 
         return ApiResult(true, res)
     }
+
+    @GetMapping("/getRandomQuestion")
+    fun getRandomQuestion(): ApiResult {
+        logger.info("Get random question")
+
+        val randomQuestion = questionsService.getRandomQuestion()
+
+        return ApiResult(true, randomQuestion)
+    }
 }

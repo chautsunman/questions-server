@@ -2,6 +2,7 @@ package com.example.questions
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoDatabase
+import com.mongodb.client.model.Aggregates.sample
 
 class QuestionsServiceImpl(
         private val questionDocumentFactory: QuestionDocumentFactory
@@ -31,5 +32,17 @@ class QuestionsServiceImpl(
         val res = mongoDatabase.getCollection("questions").insertOne(doc)
 
         return res.wasAcknowledged()
+    }
+
+    override fun getRandomQuestion(): Question? {
+        val questionCollection = mongoDatabase.getCollection("questions")
+
+        val randomQuestionDoc = questionCollection.aggregate(listOf(sample(1))).asIterable().firstOrNull()
+
+        val randomQuestion = if (randomQuestionDoc != null)
+            Question(randomQuestionDoc.getString("key"), randomQuestionDoc.getString("question"))
+            else null
+
+        return randomQuestion
     }
 }
