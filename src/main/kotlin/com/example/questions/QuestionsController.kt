@@ -10,10 +10,12 @@ class QuestionsController(
         private val questionsService: QuestionsService
 ): Logging {
     @GetMapping("/questions")
-    fun questions(): ApiResult {
+    fun questions(
+            @RequestParam(name = "id", required = false) id: String?
+    ): ApiResult {
         logger.info("Get questions")
 
-        val questions = questionsService.getQuestions()
+        val questions = questionsService.getQuestions(id)
 
         return ApiResult(true, questions)
     }
@@ -23,6 +25,19 @@ class QuestionsController(
         logger.info("Add question")
 
         val res = questionsService.addQuestion(question)
+
+        return ApiResult(true, res)
+    }
+
+    @PostMapping("/updateQuestion")
+    fun updateQuestion(@RequestBody question: Question): ApiResult {
+        logger.info("Add question")
+
+        if (question.id == null) {
+            return ApiResult(false, null)
+        }
+
+        val res = questionsService.updateQuestion(question)
 
         return ApiResult(true, res)
     }
