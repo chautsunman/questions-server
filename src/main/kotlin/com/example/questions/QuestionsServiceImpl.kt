@@ -52,7 +52,7 @@ class QuestionsServiceImpl(
         val randomQuestionDoc = questionCollection.aggregate(listOf(sample(1))).asIterable().firstOrNull()
 
         val randomQuestion = if (randomQuestionDoc != null)
-            Question(randomQuestionDoc.getString("key"), randomQuestionDoc.getString("question"))
+            Question(randomQuestionDoc.getString("id"), randomQuestionDoc.getString("question"))
             else null
 
         return randomQuestion
