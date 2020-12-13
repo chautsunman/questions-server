@@ -1,30 +1,23 @@
-package com.example.questions
+package com.example.questions.service
 
-import com.mongodb.client.MongoClients
-import com.mongodb.client.MongoDatabase
+import com.example.questions.Question
+import com.example.questions.controller.QuestionDocumentFactory
 import com.mongodb.client.model.Aggregates.sample
 import com.mongodb.client.model.Filters.eq
 
 class QuestionsServiceImpl(
+        private val mongoDbClient: MongoDbClient,
         private val questionDocumentFactory: QuestionDocumentFactory
 ) : QuestionsService {
-    private val DB_NAME = "Questions"
-
-    private var mongoDatabase: MongoDatabase
-
-    init {
-        val mongoClient = MongoClients.create()
-        mongoDatabase = mongoClient.getDatabase(DB_NAME)
-    }
-
     override fun getQuestions(id: String?): List<Question> {
-        val questionCollection = mongoDatabase.getCollection("questions")
+        val questionCollection = mongoDbClient.getDb().getCollection("questions")
 
         val res = if (id == null)
             questionCollection.find()
             else questionCollection.find(eq("id", id))
         val questions = res.asIterable().map {
-            document -> Question(document.getString("id"), document.getString("question"))
+            document ->
+            Question(document.getString("id"), document.getString("question"))
         }
 
         return questions
@@ -33,7 +26,7 @@ class QuestionsServiceImpl(
     override fun addQuestion(question: Question): String? {
         val doc = questionDocumentFactory.newDoc(question)
 
-        val res = mongoDatabase.getCollection("questions").insertOne(doc)
+        val res = mongoDbClient.getDb().getCollection("questions").insertOne(doc)
 
         return if (res.wasAcknowledged() && doc.contains("id")) doc.getString("id") else null
     }
@@ -41,13 +34,13 @@ class QuestionsServiceImpl(
     override fun updateQuestion(question: Question): String? {
         val doc = questionDocumentFactory.getDoc(question)
 
-        val res = mongoDatabase.getCollection("questions").replaceOne(eq("id", question.id), doc)
+        val res = mongoDbClient.getDb().getCollection("questions").replaceOne(eq("id", question.id), doc)
 
         return if (res.modifiedCount >= 1) question.id else null
     }
 
     override fun getRandomQuestion(): Question? {
-        val questionCollection = mongoDatabase.getCollection("questions")
+        val questionCollection = mongoDbClient.getDb().getCollection("questions")
 
         val randomQuestionDoc = questionCollection.aggregate(listOf(sample(1))).asIterable().firstOrNull()
 

@@ -1,5 +1,6 @@
-package com.example.questions
+package com.example.questions.controller
 
+import com.example.questions.Question
 import org.bson.Document
 import org.bson.types.ObjectId
 import java.util.*

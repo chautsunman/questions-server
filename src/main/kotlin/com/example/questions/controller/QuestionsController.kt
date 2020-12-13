@@ -1,5 +1,8 @@
-package com.example.questions
+package com.example.questions.controller
 
+import com.example.questions.ApiResult
+import com.example.questions.Question
+import com.example.questions.service.QuestionsService
 import org.apache.logging.log4j.kotlin.Logging
 import org.springframework.web.bind.annotation.*
 

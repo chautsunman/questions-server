@@ -1,4 +1,6 @@
-package com.example.questions
+package com.example.questions.service
+
+import com.example.questions.Question
 
 interface QuestionsService {
     fun getQuestions(id: String?): List<Question>
