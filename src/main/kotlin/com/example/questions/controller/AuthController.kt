@@ -22,7 +22,7 @@ class AuthController(
             return ApiResult(true, SignInRes(false))
         }
 
-        val res = userService.createUserIfNotExists(req.uid)
+        val res = userService.setUpUser(req.uid)
 
         return ApiResult(true, SignInRes(res))
     }
