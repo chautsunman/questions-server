@@ -17,9 +17,11 @@ fun main(args: Array<String>) {
 	logger.info("App started")
 
 	// initialize Firebase
-	val options = FirebaseOptions.builder()
-			.setCredentials(GoogleCredentials.getApplicationDefault())
-			.build()
-	FirebaseApp.initializeApp(options)
-	logger.info("initialized Firebase")
+	if (FirebaseApp.getApps().size == 0) {
+		val options = FirebaseOptions.builder()
+				.setCredentials(GoogleCredentials.getApplicationDefault())
+				.build()
+		FirebaseApp.initializeApp(options)
+		logger.info("initialized Firebase")
+	}
 }

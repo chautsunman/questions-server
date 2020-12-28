@@ -1,53 +1,62 @@
 package com.example.questions.service
 
-import com.example.questions.Question
-import com.example.questions.controller.QuestionDocumentFactory
+import com.example.questions.data.Question
+import com.example.questions.service.data.QuestionMapper
+import com.example.questions.service.data.QuestionObj
+import com.mongodb.client.model.Aggregates.match
 import com.mongodb.client.model.Aggregates.sample
 import com.mongodb.client.model.Filters.eq
+import org.bson.types.ObjectId
 
 class QuestionsServiceImpl(
         private val mongoDbClient: MongoDbClient,
-        private val questionDocumentFactory: QuestionDocumentFactory
+        private val questionMapper: QuestionMapper
 ) : QuestionsService {
     override fun getQuestions(id: String?): List<Question> {
-        val questionCollection = mongoDbClient.getDb().getCollection("questions")
+        val questionCollection = mongoDbClient.getDb()
+                .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)
 
-        val res = if (id == null)
+        var res = if (id == null)
             questionCollection.find()
-            else questionCollection.find(eq("id", id))
-        val questions = res.asIterable().map {
-            document ->
-            Question(document.getString("id"), document.getString("question"))
-        }
+            else questionCollection.find(eq(OBJECT_ID_FIELD, ObjectId(id)))
+        val questions = res.map { questionObj -> questionMapper.decode(questionObj) }.toList()
 
         return questions
     }
 
-    override fun addQuestion(question: Question): String? {
-        val doc = questionDocumentFactory.newDoc(question)
+    override fun addQuestion(groupId: String, question: Question): String? {
+        val questionObj = questionMapper.encode(question)
 
-        val res = mongoDbClient.getDb().getCollection("questions").insertOne(doc)
+        val res = mongoDbClient.getDb()
+                .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)
+                .insertOne(questionObj)
 
-        return if (res.wasAcknowledged() && doc.contains("id")) doc.getString("id") else null
+        return if (res.wasAcknowledged()) questionObj.id?.toHexString() else null
     }
 
-    override fun updateQuestion(question: Question): String? {
-        val doc = questionDocumentFactory.getDoc(question)
+    override fun updateQuestion(groupId: String, question: Question): String? {
+        val questionObj = questionMapper.encode(question)
 
-        val res = mongoDbClient.getDb().getCollection("questions").replaceOne(eq("id", question.id), doc)
+        val res = mongoDbClient.getDb()
+                .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)
+                .replaceOne(eq(OBJECT_ID_FIELD, questionObj.id), questionObj)
 
         return if (res.modifiedCount >= 1) question.id else null
     }
 
-    override fun getRandomQuestion(): Question? {
-        val questionCollection = mongoDbClient.getDb().getCollection("questions")
+    override fun getRandomQuestion(groupId: String): Question? {
+        val questionCollection = mongoDbClient.getDb()
+                .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)
 
-        val randomQuestionDoc = questionCollection.aggregate(listOf(sample(1))).asIterable().firstOrNull()
+        val randomQuestionObj = questionCollection
+                .aggregate(listOf(
+                        match(eq("questionGroupId", ObjectId(groupId))),
+                        sample(1)))
+                .asIterable()
+                .firstOrNull()
 
-        val randomQuestion = if (randomQuestionDoc != null)
-            Question(randomQuestionDoc.getString("id"), randomQuestionDoc.getString("question"))
+        return if (randomQuestionObj != null)
+            questionMapper.decode(randomQuestionObj)
             else null
-
-        return randomQuestion
     }
 }
