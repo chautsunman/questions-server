@@ -22,7 +22,7 @@ class QuestionsController(
     ): ApiResult {
         logger.info("Get questions")
 
-        val questions = questionsService.getQuestions(id)
+        val questions = questionsService.getQuestions(groupId, id)
 
         return ApiResult(true, questions)
     }

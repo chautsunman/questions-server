@@ -5,27 +5,38 @@ import com.example.questions.service.data.QuestionMapper
 import com.example.questions.service.data.QuestionObj
 import com.mongodb.client.model.Aggregates.match
 import com.mongodb.client.model.Aggregates.sample
+import com.mongodb.client.model.Filters.and
 import com.mongodb.client.model.Filters.eq
+import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 
 class QuestionsServiceImpl(
         private val mongoDbClient: MongoDbClient,
         private val questionMapper: QuestionMapper
 ) : QuestionsService {
-    override fun getQuestions(id: String?): List<Question> {
+    override fun getQuestions(groupId: String?, id: String?): List<Question> {
         val questionCollection = mongoDbClient.getDb()
                 .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)
 
-        var res = if (id == null)
-            questionCollection.find()
-            else questionCollection.find(eq(OBJECT_ID_FIELD, ObjectId(id)))
+        val filters: ArrayList<Bson> = ArrayList()
+        if (groupId != null) {
+            filters.add(eq("questionGroupId", ObjectId(groupId)))
+        }
+        if (id != null) {
+            filters.add(eq(OBJECT_ID_FIELD, ObjectId(id)))
+        }
+
+        val res = if (filters.isNotEmpty())
+            questionCollection.find(and(filters))
+            else questionCollection.find()
         val questions = res.map { questionObj -> questionMapper.decode(questionObj) }.toList()
 
         return questions
     }
 
     override fun addQuestion(groupId: String, question: Question): String? {
-        val questionObj = questionMapper.encode(question)
+        val _question = question.copy(questionGroupId = groupId)
+        val questionObj = questionMapper.encode(_question)
 
         val res = mongoDbClient.getDb()
                 .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)
@@ -35,7 +46,8 @@ class QuestionsServiceImpl(
     }
 
     override fun updateQuestion(groupId: String, question: Question): String? {
-        val questionObj = questionMapper.encode(question)
+        val _question = question.copy(questionGroupId = groupId)
+        val questionObj = questionMapper.encode(_question)
 
         val res = mongoDbClient.getDb()
                 .getCollection(QUESTIONS_COLLECTION, QuestionObj::class.java)

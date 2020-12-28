@@ -3,7 +3,7 @@ package com.example.questions.service
 import com.example.questions.data.Question
 
 interface QuestionsService {
-    fun getQuestions(id: String?): List<Question>
+    fun getQuestions(groupId: String?, id: String?): List<Question>
 
     fun addQuestion(groupId: String, question: Question): String?
 
