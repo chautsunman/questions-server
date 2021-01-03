@@ -30,9 +30,10 @@ class ServiceConfig {
 
     @Bean
     fun userService(
-            mongoDbClient: MongoDbClient
+            mongoDbClient: MongoDbClient,
+            questionGroupsService: QuestionGroupsService
     ): UserService {
-        return UserServiceImpl(mongoDbClient)
+        return UserServiceImpl(mongoDbClient, questionGroupsService)
     }
 
     @Bean

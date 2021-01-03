@@ -5,10 +5,11 @@ import com.example.questions.data.QuestionGroup
 import com.example.questions.service.QuestionGroupsService
 import org.apache.logging.log4j.kotlin.Logging
 import org.springframework.web.bind.annotation.*
+import java.security.Principal
 
 @RestController
 @CrossOrigin(origins = ["http://localhost:3000"])
-@RequestMapping("/questionGroups")
+@RequestMapping("/api/questionGroups")
 class QuestionGroupsController(
         private val questionGroupsService: QuestionGroupsService,
 ): Logging {
@@ -17,37 +18,52 @@ class QuestionGroupsController(
 
     @GetMapping("/questionGroups")
     fun questionGroups(
-            @RequestParam(name = "uid", required = true) uid: String
+            @RequestParam(name = "id", required = false) id: String?,
+            principal: Principal
     ): ApiResult {
-        logger.info("Get question groups")
+        val uid = principal.name
 
-        val questionGroups = questionGroupsService.getQuestionGroups(uid)
+        logger.info("Get question groups, uid: $uid, id: $id")
+
+        val questionGroups = questionGroupsService.getQuestionGroups(uid, id)
 
         return ApiResult(true, questionGroups)
     }
 
     @PostMapping("/addQuestionGroup")
-    fun addQuestion(@RequestBody reqBody: AddQuestionGroupReqBody): ApiResult {
-        logger.info("Add question")
+    fun addQuestion(
+            @RequestBody reqBody: AddQuestionGroupReqBody,
+            principal: Principal
+    ): ApiResult {
+        val uid = principal.name
 
         if (reqBody.questionGroup == null) {
+            logger.info("null question group")
             return ApiResult(false, null)
         }
 
-        val res = questionGroupsService.addQuestionGroup(reqBody.questionGroup, "uid")
+        logger.info("Add question group, uid: $uid")
+
+        val res = questionGroupsService.addQuestionGroup(reqBody.questionGroup, uid)
 
         return ApiResult(true, res)
     }
 
     @PostMapping("/updateQuestionGroup")
-    fun updateQuestion(@RequestBody reqBody: UpdateQuestionGroupReqBody): ApiResult {
-        logger.info("Update question")
+    fun updateQuestion(
+            @RequestBody reqBody: UpdateQuestionGroupReqBody,
+            principal: Principal
+    ): ApiResult {
+        val uid = principal.name
 
-        if (reqBody.questionGroup == null) {
+        if (reqBody.questionGroup == null || reqBody.questionGroup.id == null) {
+            logger.info("null question group or null question group ID")
             return ApiResult(false, null)
         }
 
-        val res = questionGroupsService.updateQuestionGroup(reqBody.questionGroup, "uid")
+        logger.info("Update question group, uid: $uid, ID: ${reqBody.questionGroup.id}")
+
+        val res = questionGroupsService.updateQuestionGroup(reqBody.questionGroup, uid)
 
         return ApiResult(true, res)
     }

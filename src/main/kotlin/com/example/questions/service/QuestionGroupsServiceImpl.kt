@@ -3,61 +3,61 @@ package com.example.questions.service
 import com.example.questions.data.QuestionGroup
 import com.example.questions.service.data.QuestionGroupMapper
 import com.example.questions.service.data.QuestionGroupObj
-import com.mongodb.client.model.Aggregates.lookup
-import com.mongodb.client.model.Aggregates.match
+import com.mongodb.client.ClientSession
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.eq
 import org.apache.logging.log4j.kotlin.Logging
-import org.bson.Document
-import org.bson.codecs.pojo.annotations.BsonProperty
-import java.lang.RuntimeException
-import kotlin.collections.ArrayList
+import org.bson.conversions.Bson
+import org.bson.types.ObjectId
 
 class QuestionGroupsServiceImpl(
         private val mongoDbClient: MongoDbClient,
         private val questionGroupMapper: QuestionGroupMapper
 ) : QuestionGroupsService, Logging {
-    data class UserQuestionGroupsRes(
-            var userQuestionGroups: List<QuestionGroupObj> = emptyList()
-    )
+    override fun getQuestionGroups(uid: String, id: String?): List<QuestionGroup> {
+        val questionGroupsCollection = mongoDbClient.getDb()
+                .getCollection(QUESTION_GROUPS_COLLECTION, QuestionGroupObj::class.java)
 
-    override fun getQuestionGroups(uid: String): List<QuestionGroup> {
-        val usersCollection = mongoDbClient.getDb().getCollection(USERS_COLLECTION)
-
-        val res = usersCollection.aggregate(
-                listOf(
-                        match(eq(UID_FIELD, uid)),
-                        lookup(QUESTION_GROUPS_COLLECTION, "questionGroups", OBJECT_ID_FIELD, "userQuestionGroups")
-                ),
-                UserQuestionGroupsRes::class.java
-        )
-
-        return try {
-            if (res.count() != 1) {
-                return emptyList()
-            }
-            val resObj = res.first() ?: return emptyList()
-
-            val questionGroups = resObj.userQuestionGroups.map { questionGroupObj -> questionGroupMapper.decode(questionGroupObj) }
-
-            questionGroups
-        } catch (e: RuntimeException) {
-            logger.info("get question groups error, uid: $uid", e)
-            emptyList()
+        val filters: ArrayList<Bson> = ArrayList()
+        filters.add(eq("users", uid))
+        if (id != null) {
+            filters.add(eq(OBJECT_ID_FIELD, ObjectId(id)))
         }
+
+        val res = if (filters.isNotEmpty())
+                questionGroupsCollection.find(Filters.and(filters))
+                else questionGroupsCollection.find()
+        val questionGroups = res.map { questionGroupObj -> questionGroupMapper.decode(questionGroupObj) }.toList()
+
+        return questionGroups
     }
 
     override fun addQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {
-        val questionGroupObj = questionGroupMapper.encode(questionGroup)
+        return addQuestionGroup(null, questionGroup, uid)
+    }
 
-        val res = mongoDbClient.getDb()
+    override fun addQuestionGroup(clientSession: ClientSession?, questionGroup: QuestionGroup, uid: String): String? {
+        val questionGroupObj = questionGroupMapper.encode(questionGroup)
+        questionGroupObj.users = listOf(uid)
+
+        val questionGroupsCollection = mongoDbClient.getDb()
                 .getCollection(QUESTION_GROUPS_COLLECTION, QuestionGroupObj::class.java)
-                .insertOne(questionGroupObj)
+        val res = if (clientSession == null)
+                questionGroupsCollection.insertOne(questionGroupObj)
+                else questionGroupsCollection.insertOne(clientSession, questionGroupObj)
 
         return if (res.wasAcknowledged()) questionGroupObj.id?.toHexString() else null
     }
 
     override fun updateQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {
-        val questionGroupObj = questionGroupMapper.encode(questionGroup)
+        val oldQuestionGroups = getQuestionGroups(uid, questionGroup.id)
+        if (oldQuestionGroups.isEmpty()) {
+            return null
+        }
+        val oldQuestionGroup = oldQuestionGroups[0]
+
+        val _questionGroup = oldQuestionGroup.copy(name = questionGroup.name)
+        val questionGroupObj = questionGroupMapper.encode(_questionGroup)
 
         val res = mongoDbClient.getDb()
                 .getCollection(QUESTION_GROUPS_COLLECTION, QuestionGroupObj::class.java)

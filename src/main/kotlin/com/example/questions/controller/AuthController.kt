@@ -4,26 +4,30 @@ import com.example.questions.ApiResult
 import com.example.questions.service.UserService
 import org.apache.logging.log4j.kotlin.Logging
 import org.springframework.web.bind.annotation.*
+import java.security.Principal
 
 @RestController
 @CrossOrigin(origins = ["http://localhost:3000"])
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 class AuthController(
         private val userService: UserService
 ): Logging {
-    data class SignInReq(val uid: String? = null)
     data class SignInRes(val signedIn: Boolean)
 
     @PostMapping("/signIn")
-    fun signIn(@RequestBody req: SignInReq): ApiResult {
-        logger.info("Sign in, uid: ${req.uid}")
+    fun signIn(
+            principal: Principal
+    ): ApiResult {
+        logger.info("Sign in")
 
-        if (req.uid == null) {
+        val uid = principal.name
+        logger.info("uid: $uid")
+
+        val res = userService.setUpUser(uid)
+        if (!res) {
             return ApiResult(true, SignInRes(false))
         }
 
-        val res = userService.setUpUser(req.uid)
-
-        return ApiResult(true, SignInRes(res))
+        return ApiResult(true, SignInRes(true))
     }
 }

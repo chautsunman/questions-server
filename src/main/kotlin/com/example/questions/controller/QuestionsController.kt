@@ -8,19 +8,19 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @CrossOrigin(origins = ["http://localhost:3000"])
-@RequestMapping("/questions")
+@RequestMapping("/api/questions")
 class QuestionsController(
         private val questionsService: QuestionsService
 ): Logging {
-    data class AddQuestionReqBody(val groupId: String, val question: Question)
-    data class UpdateQuestionReqBody(val groupId: String, val question: Question)
+    data class AddQuestionReqBody(val groupId: String? = null, val question: Question? = null)
+    data class UpdateQuestionReqBody(val groupId: String? = null, val question: Question? = null)
 
     @GetMapping("/questions")
     fun questions(
             @RequestParam(name = "groupId", required = false) groupId: String?,
             @RequestParam(name = "id", required = false) id: String?
     ): ApiResult {
-        logger.info("Get questions")
+        logger.info("Get questions, groupId: $groupId, id: $id")
 
         val questions = questionsService.getQuestions(groupId, id)
 
@@ -29,6 +29,15 @@ class QuestionsController(
 
     @PostMapping("/addQuestion")
     fun addQuestion(@RequestBody reqBody: AddQuestionReqBody): ApiResult {
+        if (reqBody.groupId == null) {
+            logger.info("null group ID")
+            return ApiResult(false, null)
+        }
+        if (reqBody.question == null) {
+            logger.info("null question")
+            return ApiResult(false, null)
+        }
+
         logger.info("Add question")
 
         val res = questionsService.addQuestion(reqBody.groupId, reqBody.question)
@@ -38,11 +47,16 @@ class QuestionsController(
 
     @PostMapping("/updateQuestion")
     fun updateQuestion(@RequestBody reqBody: UpdateQuestionReqBody): ApiResult {
-        logger.info("Add question")
-
-        if (reqBody.question.id == null) {
+        if (reqBody.groupId == null) {
+            logger.info("null group ID")
             return ApiResult(false, null)
         }
+        if (reqBody.question == null || reqBody.question.id == null) {
+            logger.info("null question or null question ID")
+            return ApiResult(false, null)
+        }
+
+        logger.info("Update question, ID: ${reqBody.question.id}")
 
         val res = questionsService.updateQuestion(reqBody.groupId, reqBody.question)
 
