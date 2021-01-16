@@ -56,7 +56,7 @@ class QuestionGroupsController(
     ): ApiResult {
         val uid = principal.name
 
-        if (reqBody.questionGroup == null || reqBody.questionGroup.id == null) {
+        if (reqBody.questionGroup?.id == null) {
             logger.info("null question group or null question group ID")
             return ApiResult(false, null)
         }

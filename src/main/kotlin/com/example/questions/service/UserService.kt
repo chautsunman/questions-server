@@ -1,5 +1,9 @@
 package com.example.questions.service
 
+import com.example.questions.data.User
+
 interface UserService {
-    fun setUpUser(uid: String): Boolean
+    fun setUpUser(user: User): Boolean
+
+    fun searchUser(email: String): User?
 }

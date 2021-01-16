@@ -1,9 +1,11 @@
 package com.example.questions.service
 
 import com.example.questions.data.QuestionGroup
+import com.example.questions.data.User
 import com.mongodb.TransactionOptions
 import com.mongodb.client.TransactionBody
 import com.mongodb.client.model.Filters.eq
+import com.mongodb.client.model.ReplaceOptions
 import org.apache.logging.log4j.kotlin.Logging
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -12,29 +14,17 @@ class UserServiceImpl(
         private val mongoDbClient: MongoDbClient,
         private val questionGroupsService: QuestionGroupsService
 ): UserService, Logging {
-    override fun setUpUser(uid: String): Boolean {
+    override fun setUpUser(user: User): Boolean {
+        val uid = user.uid ?: return true
+
         val clientSession = mongoDbClient.getClient().startSession()
 
         val txnOptions = TransactionOptions.builder().build()
 
         val txnBody = TransactionBody<Boolean> {
-            val userCollection = mongoDbClient.getDb().getCollection(USERS_COLLECTION)
+            val userCollection = mongoDbClient.getDb().getCollection(USERS_COLLECTION, User::class.java)
             val userRes = userCollection.find(eq(UID_FIELD, uid))
             logger.info("new user $uid, record: ${userRes.count()}")
-
-            val userDoc: Document
-            var userObjectId: ObjectId
-            if (userRes.count() == 0) {
-                userObjectId = ObjectId()
-                userDoc = Document(OBJECT_ID_FIELD, userObjectId)
-                with(userDoc) {
-                    append(UID_FIELD, uid)
-                }
-                userCollection.insertOne(clientSession, userDoc)
-            } else {
-                userDoc = userRes.first() as Document
-                userObjectId = userDoc.getObjectId(OBJECT_ID_FIELD)
-            }
 
             val hasQuestionGroup = questionGroupsService.getQuestionGroups(uid, null).isNotEmpty()
             if (!hasQuestionGroup) {
@@ -42,7 +32,7 @@ class UserServiceImpl(
                 questionGroupsService.addQuestionGroup(clientSession, questionGroup, uid)
             }
 
-            userCollection.replaceOne(clientSession, eq(OBJECT_ID_FIELD, userObjectId), userDoc)
+            userCollection.replaceOne(clientSession, eq(UID_FIELD, uid), user, ReplaceOptions().upsert(true))
 
             return@TransactionBody true
         }
@@ -56,5 +46,17 @@ class UserServiceImpl(
         } finally {
             clientSession.close()
         }
+    }
+
+    override fun searchUser(email: String): User? {
+        val usersCollection = mongoDbClient.getDb().getCollection(USERS_COLLECTION, User::class.java)
+
+        val res = usersCollection.find(eq("email", email))
+
+        if (res.count() == 0) {
+            return null
+        }
+
+        return res.first()
     }
 }

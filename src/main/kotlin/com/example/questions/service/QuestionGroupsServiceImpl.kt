@@ -1,22 +1,23 @@
 package com.example.questions.service
 
 import com.example.questions.data.QuestionGroup
-import com.example.questions.service.data.QuestionGroupMapper
-import com.example.questions.service.data.QuestionGroupObj
+import com.example.questions.data.User
 import com.mongodb.client.ClientSession
+import com.mongodb.client.model.Aggregates.lookup
+import com.mongodb.client.model.Aggregates.match
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.eq
+import com.mongodb.client.model.Updates.set
 import org.apache.logging.log4j.kotlin.Logging
+import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 
 class QuestionGroupsServiceImpl(
-        private val mongoDbClient: MongoDbClient,
-        private val questionGroupMapper: QuestionGroupMapper
+        private val mongoDbClient: MongoDbClient
 ) : QuestionGroupsService, Logging {
     override fun getQuestionGroups(uid: String, id: String?): List<QuestionGroup> {
-        val questionGroupsCollection = mongoDbClient.getDb()
-                .getCollection(QUESTION_GROUPS_COLLECTION, QuestionGroupObj::class.java)
+        val questionGroupsCollection = mongoDbClient.getDb().getCollection(QUESTION_GROUPS_COLLECTION)
 
         val filters: ArrayList<Bson> = ArrayList()
         filters.add(eq("users", uid))
@@ -24,12 +25,40 @@ class QuestionGroupsServiceImpl(
             filters.add(eq(OBJECT_ID_FIELD, ObjectId(id)))
         }
 
-        val res = if (filters.isNotEmpty())
-                questionGroupsCollection.find(Filters.and(filters))
-                else questionGroupsCollection.find()
-        val questionGroups = res.map { questionGroupObj -> questionGroupMapper.decode(questionGroupObj) }.toList()
+        val aggregateList: ArrayList<Bson> = ArrayList()
+        aggregateList.add(match(Filters.and(filters)))
+        aggregateList.add(lookup(USERS_COLLECTION, "users", "uid", "users_details"))
 
-        return questionGroups
+        val res = questionGroupsCollection.aggregate(aggregateList)
+
+        return res.map { questionGroupDoc ->
+            val id = questionGroupDoc.getObjectId("_id")
+            if (id == null) {
+                null
+            }
+            val name = questionGroupDoc["name", ""]
+
+            val users = questionGroupDoc.getList("users", String::class.java) as List<String>
+            val userDetailsDocs = questionGroupDoc.getList("users_details", Document::class.java, emptyList())
+            val userDetails: ArrayList<User> = ArrayList()
+            for (userDetailsDoc in userDetailsDocs) {
+                val user = User(
+                        userDetailsDoc.getOrDefault("uid", null) as String?,
+                        userDetailsDoc.getOrDefault("email", null) as String?)
+                if (user.uid != null) {
+                    userDetails.add(user)
+                }
+            }
+
+            val owners = questionGroupDoc.getList("owners", String::class.java) as List<String>
+
+            QuestionGroup(
+                    id.toHexString(),
+                    name,
+                    users = users,
+                    userDetails = userDetails,
+                    owners = owners)
+        }.filterNotNull().toList()
     }
 
     override fun addQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {
@@ -37,31 +66,28 @@ class QuestionGroupsServiceImpl(
     }
 
     override fun addQuestionGroup(clientSession: ClientSession?, questionGroup: QuestionGroup, uid: String): String? {
-        val questionGroupObj = questionGroupMapper.encode(questionGroup)
-        questionGroupObj.users = listOf(uid)
+        val objectId = ObjectId()
+        val questionGroupDoc = Document("_id", objectId)
+        questionGroupDoc["name"] = questionGroup.name
+        questionGroupDoc["users"] = listOf(uid)
+        questionGroupDoc["owners"] = listOf(uid)
 
         val questionGroupsCollection = mongoDbClient.getDb()
-                .getCollection(QUESTION_GROUPS_COLLECTION, QuestionGroupObj::class.java)
+                .getCollection(QUESTION_GROUPS_COLLECTION)
         val res = if (clientSession == null)
-                questionGroupsCollection.insertOne(questionGroupObj)
-                else questionGroupsCollection.insertOne(clientSession, questionGroupObj)
+                questionGroupsCollection.insertOne(questionGroupDoc)
+                else questionGroupsCollection.insertOne(clientSession, questionGroupDoc)
 
-        return if (res.wasAcknowledged()) questionGroupObj.id?.toHexString() else null
+        return if (res.wasAcknowledged()) objectId.toHexString() else null
     }
 
     override fun updateQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {
-        val oldQuestionGroups = getQuestionGroups(uid, questionGroup.id)
-        if (oldQuestionGroups.isEmpty()) {
-            return null
-        }
-        val oldQuestionGroup = oldQuestionGroups[0]
-
-        val _questionGroup = oldQuestionGroup.copy(name = questionGroup.name)
-        val questionGroupObj = questionGroupMapper.encode(_questionGroup)
-
         val res = mongoDbClient.getDb()
-                .getCollection(QUESTION_GROUPS_COLLECTION, QuestionGroupObj::class.java)
-                .replaceOne(eq(OBJECT_ID_FIELD, questionGroupObj.id), questionGroupObj)
+                .getCollection(QUESTION_GROUPS_COLLECTION)
+                .updateOne(eq(OBJECT_ID_FIELD, ObjectId(questionGroup.id)), listOf(
+                        set("name", questionGroup.name),
+                        set("users", questionGroup.users)
+                ))
 
         return if (res.modifiedCount >= 1) questionGroup.id else null
     }
