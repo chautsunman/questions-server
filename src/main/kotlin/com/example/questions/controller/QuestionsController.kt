@@ -18,7 +18,7 @@ class QuestionsController(
 
     @GetMapping("/questions")
     fun questions(
-            @RequestParam(name = "groupId", required = false) groupId: String?,
+            @RequestParam(name = "groupId", required = true) groupId: String,
             @RequestParam(name = "id", required = false) id: String?,
             principal: Principal
     ): ApiResult {

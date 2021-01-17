@@ -11,4 +11,6 @@ interface QuestionGroupsService {
     fun addQuestionGroup(clientSession: ClientSession?, questionGroup: QuestionGroup, uid: String): String?
 
     fun updateQuestionGroup(questionGroup: QuestionGroup, uid: String): String?
+
+    fun hasUser(questionGroupId: String, uid: String): Boolean
 }

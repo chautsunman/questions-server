@@ -11,9 +11,14 @@ import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 
 class QuestionsServiceImpl(
-        private val mongoDbClient: MongoDbClient
+        private val mongoDbClient: MongoDbClient,
+        private val questionGroupsService: QuestionGroupsService
 ) : QuestionsService {
-    override fun getQuestions(uid: String, groupId: String?, id: String?): List<Question> {
+    override fun getQuestions(uid: String, groupId: String, id: String?): List<Question> {
+        if (!questionGroupsService.hasUser(groupId, uid)) {
+            return emptyList()
+        }
+
         val questionCollection = mongoDbClient.getDb().getCollection(QUESTIONS_COLLECTION)
 
         val filters: ArrayList<Bson> = ArrayList()
@@ -32,6 +37,10 @@ class QuestionsServiceImpl(
     }
 
     override fun addQuestion(uid: String, groupId: String, question: Question): String? {
+        if (!questionGroupsService.hasUser(groupId, uid)) {
+            return null
+        }
+
         val objectId = ObjectId()
         val questionDoc = Document("_id", objectId)
         questionDoc["question"] = question.question
@@ -46,6 +55,10 @@ class QuestionsServiceImpl(
     }
 
     override fun updateQuestion(uid: String, groupId: String, question: Question): String? {
+        if (!questionGroupsService.hasUser(groupId, uid)) {
+            return null
+        }
+
         val res = mongoDbClient.getDb()
                 .getCollection(QUESTIONS_COLLECTION)
                 .updateOne(eq(OBJECT_ID_FIELD, ObjectId(question.id)), listOf(
@@ -57,6 +70,10 @@ class QuestionsServiceImpl(
     }
 
     override fun getRandomQuestion(uid: String, groupId: String): Question? {
+        if (!questionGroupsService.hasUser(groupId, uid)) {
+            return null
+        }
+
         val questionCollection = mongoDbClient.getDb().getCollection(QUESTIONS_COLLECTION)
 
         val randomQuestionDoc = questionCollection

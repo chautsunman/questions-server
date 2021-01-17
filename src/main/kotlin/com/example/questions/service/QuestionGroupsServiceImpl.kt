@@ -89,4 +89,12 @@ class QuestionGroupsServiceImpl(
 
         return if (res.modifiedCount >= 1) questionGroup.id else null
     }
+
+    override fun hasUser(questionGroupId: String, uid: String): Boolean {
+        return mongoDbClient.getDb().getCollection(QUESTION_GROUPS_COLLECTION)
+                .find(Filters.and(listOf(
+                        eq(OBJECT_ID_FIELD, ObjectId(questionGroupId)),
+                        eq("users", uid))
+                )).count() == 1
+    }
 }
