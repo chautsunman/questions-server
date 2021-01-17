@@ -1,6 +1,5 @@
 package com.example.questions.service
 
-import com.example.questions.service.data.QuestionMapper
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -13,10 +12,9 @@ class ServiceConfig {
 
     @Bean
     fun questionsService(
-            mongoDbClient: MongoDbClient,
-            questionMapper: QuestionMapper
+            mongoDbClient: MongoDbClient
     ): QuestionsService {
-        return QuestionsServiceImpl(mongoDbClient, questionMapper)
+        return QuestionsServiceImpl(mongoDbClient)
     }
 
     @Bean
@@ -32,10 +30,5 @@ class ServiceConfig {
             questionGroupsService: QuestionGroupsService
     ): UserService {
         return UserServiceImpl(mongoDbClient, questionGroupsService)
-    }
-
-    @Bean
-    fun questionMapper(): QuestionMapper {
-        return QuestionMapper()
     }
 }

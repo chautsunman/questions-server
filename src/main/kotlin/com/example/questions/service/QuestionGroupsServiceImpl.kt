@@ -33,9 +33,6 @@ class QuestionGroupsServiceImpl(
 
         return res.map { questionGroupDoc ->
             val id = questionGroupDoc.getObjectId("_id")
-            if (id == null) {
-                null
-            }
             val name = questionGroupDoc["name", ""]
 
             val users = questionGroupDoc.getList("users", String::class.java) as List<String>
@@ -57,8 +54,9 @@ class QuestionGroupsServiceImpl(
                     name,
                     users = users,
                     userDetails = userDetails,
-                    owners = owners)
-        }.filterNotNull().toList()
+                    owners = owners
+            )
+        }.toList()
     }
 
     override fun addQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {

@@ -3,11 +3,11 @@ package com.example.questions.service
 import com.example.questions.data.Question
 
 interface QuestionsService {
-    fun getQuestions(groupId: String?, id: String?): List<Question>
+    fun getQuestions(uid: String, groupId: String?, id: String?): List<Question>
 
-    fun addQuestion(groupId: String, question: Question): String?
+    fun addQuestion(uid: String, groupId: String, question: Question): String?
 
-    fun updateQuestion(groupId: String, question: Question): String?
+    fun updateQuestion(uid: String, groupId: String, question: Question): String?
 
-    fun getRandomQuestion(groupId: String): Question?
+    fun getRandomQuestion(uid: String, groupId: String): Question?
 }
