@@ -9,7 +9,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@CrossOrigin(origins = ["http://localhost:3000"])
 @RequestMapping("/api/auth")
 class AuthController(
         private val userService: UserService

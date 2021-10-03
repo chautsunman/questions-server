@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 class SecurityConfiguration: WebSecurityConfigurerAdapter(), Logging {
     override fun configure(http: HttpSecurity) {
         http
+                .cors()
+                .and()
                 .authorizeRequests()
                 .antMatchers("/api").authenticated()
                 .and()

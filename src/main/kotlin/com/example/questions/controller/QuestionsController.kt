@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*
 import java.security.Principal
 
 @RestController
-@CrossOrigin(origins = ["http://localhost:3000"])
 @RequestMapping("/api/questions")
 class QuestionsController(
         private val questionsService: QuestionsService
