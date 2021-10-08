@@ -1,7 +1,6 @@
 package com.example.questions.controller
 
 import com.example.questions.ApiResult
-import com.example.questions.data.QuestionGroup
 import com.example.questions.service.QuestionGroupsService
 import org.apache.logging.log4j.kotlin.Logging
 import org.springframework.web.bind.annotation.*
@@ -12,8 +11,8 @@ import java.security.Principal
 class QuestionGroupsController(
         private val questionGroupsService: QuestionGroupsService,
 ): Logging {
-    data class AddQuestionGroupReqBody(val questionGroup: QuestionGroup? = null)
-    data class UpdateQuestionGroupReqBody(val questionGroup: QuestionGroup? = null)
+    data class AddQuestionGroupReqBody(val questionGroup: QuestionGroupReqBody? = null)
+    data class UpdateQuestionGroupReqBody(val questionGroup: QuestionGroupReqBody? = null)
 
     @GetMapping("/questionGroups")
     fun questionGroups(

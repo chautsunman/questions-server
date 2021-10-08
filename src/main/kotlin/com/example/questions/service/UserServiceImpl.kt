@@ -1,14 +1,12 @@
 package com.example.questions.service
 
-import com.example.questions.data.QuestionGroup
+import com.example.questions.controller.QuestionGroupReqBody
 import com.example.questions.data.User
 import com.mongodb.TransactionOptions
 import com.mongodb.client.TransactionBody
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.ReplaceOptions
 import org.apache.logging.log4j.kotlin.Logging
-import org.bson.Document
-import org.bson.types.ObjectId
 
 class UserServiceImpl(
         private val mongoDbClient: MongoDbClient,
@@ -28,8 +26,8 @@ class UserServiceImpl(
 
             val hasQuestionGroup = questionGroupsService.getQuestionGroups(uid, null).isNotEmpty()
             if (!hasQuestionGroup) {
-                val questionGroup = QuestionGroup(name = "My Questions")
-                questionGroupsService.addQuestionGroup(clientSession, questionGroup, uid)
+                val questionGroup = QuestionGroupReqBody(name = "My Questions")
+                questionGroupsService.addQuestionGroup(clientSession, questionGroup, listOf(uid), listOf(uid))
             }
 
             userCollection.replaceOne(clientSession, eq(UID_FIELD, uid), user, ReplaceOptions().upsert(true))

@@ -1,5 +1,6 @@
 package com.example.questions.service
 
+import com.example.questions.controller.QuestionGroupReqBody
 import com.example.questions.data.QuestionGroup
 import com.example.questions.data.User
 import com.mongodb.client.ClientSession
@@ -59,16 +60,21 @@ class QuestionGroupsServiceImpl(
         }.toList()
     }
 
-    override fun addQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {
-        return addQuestionGroup(null, questionGroup, uid)
+    override fun addQuestionGroup(questionGroup: QuestionGroupReqBody, uid: String): String? {
+        val finalUsers = mutableListOf<String>()
+        finalUsers.addAll(questionGroup.users)
+        if (!finalUsers.contains(uid)) {
+            finalUsers.add(uid)
+        }
+        return addQuestionGroup(null, questionGroup, listOf(uid), finalUsers)
     }
 
-    override fun addQuestionGroup(clientSession: ClientSession?, questionGroup: QuestionGroup, uid: String): String? {
+    override fun addQuestionGroup(clientSession: ClientSession?, questionGroup: QuestionGroupReqBody, owners: List<String>, users: List<String>): String? {
         val objectId = ObjectId()
         val questionGroupDoc = Document("_id", objectId)
         questionGroupDoc["name"] = questionGroup.name
-        questionGroupDoc["users"] = listOf(uid)
-        questionGroupDoc["owners"] = listOf(uid)
+        questionGroupDoc["users"] = users
+        questionGroupDoc["owners"] = owners
 
         val questionGroupsCollection = mongoDbClient.getDb()
                 .getCollection(QUESTION_GROUPS_COLLECTION)
@@ -79,7 +85,7 @@ class QuestionGroupsServiceImpl(
         return if (res.wasAcknowledged()) objectId.toHexString() else null
     }
 
-    override fun updateQuestionGroup(questionGroup: QuestionGroup, uid: String): String? {
+    override fun updateQuestionGroup(questionGroup: QuestionGroupReqBody, uid: String): String? {
         val res = mongoDbClient.getDb()
                 .getCollection(QUESTION_GROUPS_COLLECTION)
                 .updateOne(eq(OBJECT_ID_FIELD, ObjectId(questionGroup.id)), listOf(
@@ -87,7 +93,7 @@ class QuestionGroupsServiceImpl(
                         set("users", questionGroup.users)
                 ))
 
-        return if (res.modifiedCount >= 1) questionGroup.id else null
+        return questionGroup.id
     }
 
     override fun hasUser(questionGroupId: String, uid: String): Boolean {
