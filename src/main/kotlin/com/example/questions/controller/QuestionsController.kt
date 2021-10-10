@@ -2,10 +2,11 @@ package com.example.questions.controller
 
 import com.example.questions.ApiResult
 import com.example.questions.data.Question
+import com.example.questions.security.UserPrincipal
 import com.example.questions.service.QuestionsService
 import org.apache.logging.log4j.kotlin.Logging
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import java.security.Principal
 
 @RestController
 @RequestMapping("/api/questions")
@@ -19,9 +20,9 @@ class QuestionsController(
     fun questions(
             @RequestParam(name = "groupId", required = true) groupId: String,
             @RequestParam(name = "id", required = false) id: String?,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         logger.info("Get questions, uid: $uid, groupId: $groupId, id: $id")
 
@@ -33,9 +34,9 @@ class QuestionsController(
     @PostMapping("/addQuestion")
     fun addQuestion(
             @RequestBody reqBody: AddQuestionReqBody,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         if (reqBody.groupId == null) {
             logger.info("null group ID")
@@ -56,9 +57,9 @@ class QuestionsController(
     @PostMapping("/updateQuestion")
     fun updateQuestion(
             @RequestBody reqBody: UpdateQuestionReqBody,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         if (reqBody.groupId == null) {
             logger.info("null group ID")
@@ -79,9 +80,9 @@ class QuestionsController(
     @GetMapping("/getRandomQuestion")
     fun getRandomQuestion(
             @RequestParam(name = "groupId", required = true) groupId: String,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         logger.info("Get random question, uid: $uid")
 

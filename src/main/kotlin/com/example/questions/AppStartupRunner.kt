@@ -15,7 +15,7 @@ class AppStartupRunner : ApplicationRunner, Logging {
         logger.info("Post app startup")
 
         // initialize Firebase
-        if (FirebaseApp.getApps().size == 0) {
+        if (FirebaseApp.getApps().isEmpty()) {
             val options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.getApplicationDefault())
                     .build()
@@ -23,7 +23,6 @@ class AppStartupRunner : ApplicationRunner, Logging {
             logger.info("initialized Firebase")
         } else {
             logger.error("firebase is initialized already")
-            throw Error("firebase is initialized already")
         }
     }
 }

@@ -1,10 +1,11 @@
 package com.example.questions.controller
 
 import com.example.questions.ApiResult
+import com.example.questions.security.UserPrincipal
 import com.example.questions.service.QuestionGroupsService
 import org.apache.logging.log4j.kotlin.Logging
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import java.security.Principal
 
 @RestController
 @RequestMapping("/api/questionGroups")
@@ -17,9 +18,9 @@ class QuestionGroupsController(
     @GetMapping("/questionGroups")
     fun questionGroups(
             @RequestParam(name = "id", required = false) id: String?,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         logger.info("Get question groups, uid: $uid, id: $id")
 
@@ -31,9 +32,9 @@ class QuestionGroupsController(
     @PostMapping("/addQuestionGroup")
     fun addQuestion(
             @RequestBody reqBody: AddQuestionGroupReqBody,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         if (reqBody.questionGroup == null) {
             logger.info("null question group")
@@ -50,9 +51,9 @@ class QuestionGroupsController(
     @PostMapping("/updateQuestionGroup")
     fun updateQuestion(
             @RequestBody reqBody: UpdateQuestionGroupReqBody,
-            principal: Principal
+            @AuthenticationPrincipal userPrincipal: UserPrincipal
     ): ApiResult {
-        val uid = principal.name
+        val uid = userPrincipal.uid
 
         if (reqBody.questionGroup?.id == null) {
             logger.info("null question group or null question group ID")

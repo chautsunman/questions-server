@@ -3,7 +3,6 @@ package com.example.questions.controller
 import com.example.questions.ApiResult
 import com.example.questions.service.UserService
 import org.apache.logging.log4j.kotlin.Logging
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -17,8 +16,7 @@ class UserController(
 
     @GetMapping("/searchUser")
     fun signIn(
-            searchStr: String? = null,
-            principal: JwtAuthenticationToken
+            searchStr: String? = null
     ): ApiResult {
         logger.info("Search user, $searchStr")
 
