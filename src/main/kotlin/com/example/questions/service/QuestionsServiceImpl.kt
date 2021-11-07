@@ -66,7 +66,7 @@ class QuestionsServiceImpl(
                         set("details", question.details),
                 ))
 
-        return if (res.modifiedCount >= 1) question.id else null
+        return if (res.matchedCount >= 1) question.id else null
     }
 
     override fun getRandomQuestion(uid: String, groupId: String): Question? {
